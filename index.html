@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Meeting actions (live)</title>
+<title>Meeting actions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -212,81 +212,395 @@
   .banner { padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
   .banner .btn { min-height:44px; }
   .banner[hidden] { display:none; }
+
+  .top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:8px; }
+  .top .sub { margin-bottom:20px; }
+  .userbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-top:6px; }
+  .userbar[hidden], .panel[hidden], #app[hidden], #login[hidden], #btn-users[hidden] { display:none; }
+  .who { font-weight:600; margin-right:6px; }
+  .chip { font:inherit; font-size:0.95rem; font-weight:600; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:99px; padding:9px 16px; min-height:44px; cursor:pointer; }
+  .chip:hover { background:var(--surface-2); }
+  .chip.strong { border-color:var(--ink); }
+  .login { max-width:460px; margin:24px auto 0; padding:28px; }
+  .login h2, .panel h2 { font-size:1.3rem; margin:0 0 16px; font-weight:700; }
+  .stack { display:grid; gap:14px; }
+  .login .btn, .panel .btn { width:100%; }
+  .panel { padding:22px; margin-bottom:20px; }
+  .panel .grid2 { display:grid; grid-template-columns:1fr; gap:14px; }
+  @media (min-width:720px) { .panel .grid2 { grid-template-columns:1fr 1fr; } }
+  .msg { margin:0; font-size:0.98rem; min-height:1.4em; }
+  .msg.err { color:var(--red); font-weight:600; }
+  .msg.ok { color:var(--ink); font-weight:600; }
+  .inline { display:flex; align-items:center; gap:10px; font-size:1.05rem; }
+  .inline input { width:22px; height:22px; accent-color:var(--accent); }
+  .inline label { margin:0; color:var(--ink); font-size:1.05rem; }
+  .team { margin:14px 0 0; color:var(--ink-soft); font-size:0.98rem; }
+  input[type="password"] { width:100%; font:inherit; font-size:1.05rem; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:13px 14px; min-height:52px; }
+  input[type="password"]:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Meeting actions</h1>
-  <p class="sub">Write down who does what, and by when. Nothing gets forgotten.</p>
+  <header class="top">
+    <div>
+      <h1>Meeting actions</h1>
+      <p class="sub">Write down who does what, and by when. Nothing gets forgotten.</p>
+    </div>
+    <div class="userbar" id="userbar" hidden>
+      <span class="who" id="who"></span>
+      <button class="chip" id="btn-users" type="button" hidden>Add user</button>
+      <button class="chip" id="btn-pass" type="button">Change password</button>
+      <button class="chip strong" id="btn-out" type="button">Sign out</button>
+    </div>
+  </header>
 
-  <div class="status" id="status" role="status"><span class="dot"></span><span id="status-text">Connecting…</span><button class="link" id="retry" type="button" hidden>Try again</button></div>
-  <div class="card banner" id="import-banner" hidden>
-    <span id="import-text"></span>
-    <button class="btn" id="import-btn" type="button">Import to Supabase</button>
-  </div>
-
-  <section class="summary" aria-label="Summary">
-    <div class="card stat open"><div class="num" id="n-open">0</div><div class="lbl">Open</div></div>
-    <div class="card stat done"><div class="num" id="n-done">0</div><div class="lbl">Done</div></div>
-    <div class="card stat late" id="stat-late"><div class="num" id="n-late">0</div><div class="lbl">Overdue</div></div>
-  </section>
-  <div class="progress" role="progressbar" aria-label="Share of actions done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div id="bar-fill"></div></div>
-
-  <section class="card add">
-    <h2>Add an action</h2>
-    <form id="form" autocomplete="off">
-      <div class="fields">
-        <div>
-          <label for="f-text">What needs to happen?</label>
-          <input type="text" id="f-text" placeholder="Send the revised budget to finance" required maxlength="200">
-        </div>
-        <div>
-          <label for="f-owner">Owner</label>
-          <input type="text" id="f-owner" list="owner-list" placeholder="Name" required maxlength="40">
-          <datalist id="owner-list"></datalist>
-        </div>
-        <div>
-          <label for="f-due">Due date</label>
-          <input type="date" id="f-due" required>
-        </div>
-        <button class="btn" type="submit">Add action</button>
+  <section class="card login" id="login" aria-labelledby="login-h">
+    <h2 id="login-h">Sign in</h2>
+    <form id="login-form" class="stack" autocomplete="on">
+      <div>
+        <label for="l-user">Username</label>
+        <input type="text" id="l-user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
       </div>
+      <div>
+        <label for="l-pass">Password</label>
+        <input type="password" id="l-pass" name="password" autocomplete="current-password" required>
+      </div>
+      <p class="msg err" id="l-msg" role="alert"></p>
+      <button class="btn" type="submit" id="l-btn">Sign in</button>
     </form>
   </section>
 
-  <main id="owners" class="owners" aria-live="polite"></main>
+  <div id="app" hidden>
+    <section class="card panel" id="panel-pass" hidden aria-labelledby="pass-h">
+      <h2 id="pass-h">Change your password</h2>
+      <form id="pass-form" class="stack" autocomplete="off">
+        <div class="grid2">
+          <div>
+            <label for="p-new">New password</label>
+            <input type="password" id="p-new" autocomplete="new-password" minlength="6" required>
+          </div>
+          <div>
+            <label for="p-new2">Repeat new password</label>
+            <input type="password" id="p-new2" autocomplete="new-password" minlength="6" required>
+          </div>
+        </div>
+        <p class="msg" id="p-msg" role="status"></p>
+        <button class="btn" type="submit">Save password</button>
+      </form>
+    </section>
+
+    <section class="card panel" id="panel-users" hidden aria-labelledby="users-h">
+      <h2 id="users-h">Add a user</h2>
+      <form id="user-form" class="stack" autocomplete="off">
+        <div class="grid2">
+          <div>
+            <label for="u-name">Username</label>
+            <input type="text" id="u-name" placeholder="e.g. priya" autocapitalize="none" spellcheck="false" maxlength="30" required>
+          </div>
+          <div>
+            <label for="u-display">Display name</label>
+            <input type="text" id="u-display" placeholder="e.g. Priya" maxlength="40">
+          </div>
+          <div>
+            <label for="u-pass">Initial password</label>
+            <input type="text" id="u-pass" placeholder="At least 6 characters" autocomplete="off" minlength="6" required>
+          </div>
+          <div class="inline" style="align-self:end;min-height:52px">
+            <input type="checkbox" id="u-admin">
+            <label for="u-admin">Can add other users</label>
+          </div>
+        </div>
+        <p class="msg" id="u-msg" role="status"></p>
+        <button class="btn" type="submit">Create user</button>
+      </form>
+      <p class="team" id="team"></p>
+    </section>
+
+    <div class="status" id="status" role="status"><span class="dot"></span><span id="status-text">Connecting\u2026</span><button class="link" id="retry" type="button" hidden>Try again</button></div>
+    <div class="card banner" id="import-banner" hidden>
+      <span id="import-text"></span>
+      <button class="btn" id="import-btn" type="button">Import to Supabase</button>
+    </div>
+
+    <section class="summary" aria-label="Summary">
+      <div class="card stat open"><div class="num" id="n-open">0</div><div class="lbl">Open</div></div>
+      <div class="card stat done"><div class="num" id="n-done">0</div><div class="lbl">Done</div></div>
+      <div class="card stat late" id="stat-late"><div class="num" id="n-late">0</div><div class="lbl">Overdue</div></div>
+    </section>
+    <div class="progress" role="progressbar" aria-label="Share of actions done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div id="bar-fill"></div></div>
+
+    <section class="card add">
+      <h2>Add an action</h2>
+      <form id="form" autocomplete="off">
+        <div class="fields">
+          <div>
+            <label for="f-text">What needs to happen?</label>
+            <input type="text" id="f-text" placeholder="Send the revised budget to finance" required maxlength="200">
+          </div>
+          <div>
+            <label for="f-owner">Owner</label>
+            <input type="text" id="f-owner" list="owner-list" placeholder="Name" required maxlength="40">
+            <datalist id="owner-list"></datalist>
+          </div>
+          <div>
+            <label for="f-due">Due date</label>
+            <input type="date" id="f-due" required>
+          </div>
+          <button class="btn" type="submit">Add action</button>
+        </div>
+      </form>
+    </section>
+
+    <main id="owners" class="owners" aria-live="polite"></main>
+  </div>
 </div>
 
 <script>
 (function () {
   var SB_URL = "https://nuystrzzcexbwotrrxxa.supabase.co";
   var SB_KEY = "sb_publishable__DSToJzARzJY6ALkxWIb6w_TCIbt40v";
+  var EMAIL_DOMAIN = "@meetingactions.example.com";
   var TABLE = SB_URL + "/rest/v1/meeting_actions";
+  var SESSION_KEY = "meeting-actions-session";
   var OLD_KEY = "meeting-actions-v1";
   var POLL_MS = 15000;
 
   var actions = [];
+  var team = [];
+  var me = null;
+  var session = null;
   var busy = 0;
+  var pollTimer = null;
+  var refreshing = null;
 
   var $ = function (id) { return document.getElementById(id); };
 
-  /* ---------- Supabase REST ---------- */
-  function sb(query, opts) {
-    opts = opts || {};
-    var headers = { "apikey": SB_KEY, "Content-Type": "application/json" };
-    if (opts.returning) headers["Prefer"] = "return=representation";
-    return fetch(TABLE + (query || ""), {
-      method: opts.method || "GET",
-      headers: headers,
-      body: opts.body ? JSON.stringify(opts.body) : undefined
+  /* ---------- Session storage ---------- */
+  function loadSession() {
+    try {
+      var raw = localStorage.getItem(SESSION_KEY);
+      var s = raw ? JSON.parse(raw) : null;
+      return s && s.access_token && s.refresh_token ? s : null;
+    } catch (e) { return null; }
+  }
+  function saveSession(s) {
+    session = s;
+    try {
+      if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+      else localStorage.removeItem(SESSION_KEY);
+    } catch (e) { /* storage unavailable: session lasts until reload */ }
+  }
+  function toSession(data) {
+    return {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: data.expires_at || (Math.floor(Date.now() / 1000) + (data.expires_in || 3600)),
+      user_id: (data.user && data.user.id) || jwtSub(data.access_token)
+    };
+  }
+
+  /* ---------- HTTP helpers ---------- */
+  function errText(r) {
+    return r.text().then(function (t) {
+      try {
+        var j = JSON.parse(t);
+        return j.message || j.error_description || j.msg || j.error || t;
+      } catch (e) { return t || ("HTTP " + r.status); }
+    });
+  }
+  function authCall(path, body) {
+    return fetch(SB_URL + "/auth/v1" + path, {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body || {})
+    });
+  }
+  function jwtSub(token) {
+    try {
+      var b = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(atob(b)).sub;
+    } catch (e) { return null; }
+  }
+
+  function refreshSession() {
+    if (refreshing) return refreshing;
+    if (!session) return Promise.reject(new Error("No session"));
+    refreshing = authCall("/token?grant_type=refresh_token", { refresh_token: session.refresh_token })
+      .then(function (r) {
+        if (!r.ok) throw new Error("Session expired");
+        return r.json();
+      })
+      .then(function (d) { saveSession(toSession(d)); })
+      .then(function () { refreshing = null; }, function (e) { refreshing = null; throw e; });
+    return refreshing;
+  }
+
+  function authedFetch(url, opts, retried) {
+    if (!session) return Promise.reject(new Error("Signed out"));
+    var ready = (session.expires_at * 1000 - Date.now() < 60000) ? refreshSession() : Promise.resolve();
+    return ready.then(function () {
+      opts = opts || {};
+      var headers = opts.headers || {};
+      headers["apikey"] = SB_KEY;
+      headers["Authorization"] = "Bearer " + session.access_token;
+      headers["Content-Type"] = "application/json";
+      return fetch(url, { method: opts.method || "GET", headers: headers, body: opts.body });
     }).then(function (r) {
-      if (!r.ok) {
-        return r.text().then(function (t) { throw new Error("HTTP " + r.status + " " + t); });
+      if (r.status === 401 && !retried) {
+        return refreshSession().then(function () { return authedFetch(url, opts, true); });
       }
-      return r.status === 204 ? null : r.json();
+      if (r.status === 401) { forceSignOut("Your session ended. Please sign in again."); throw new Error("Unauthorised"); }
+      return r;
+    }, function (e) {
+      if (e && e.message === "Session expired") { forceSignOut("Your session ended. Please sign in again."); }
+      throw e;
     });
   }
 
+  function sb(query, opts) {
+    opts = opts || {};
+    var headers = {};
+    if (opts.returning) headers["Prefer"] = "return=representation";
+    return authedFetch(TABLE + (query || ""), {
+      method: opts.method, headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      if (!r.ok) return errText(r).then(function (t) { throw new Error(t); });
+      return r.status === 204 ? null : r.json();
+    });
+  }
+  function rpc(name, args) {
+    return authedFetch(SB_URL + "/rest/v1/rpc/" + name, { method: "POST", body: JSON.stringify(args) })
+      .then(function (r) {
+        if (!r.ok) return errText(r).then(function (t) { throw new Error(t); });
+        return r.json();
+      });
+  }
+
+  /* ---------- Sign in / out ---------- */
+  function showLogin(message) {
+    $("app").hidden = true;
+    $("userbar").hidden = true;
+    $("login").hidden = false;
+    $("l-msg").textContent = message || "";
+    $("l-pass").value = "";
+    closePanels();
+  }
+  function showApp() {
+    $("login").hidden = true;
+    $("app").hidden = false;
+    $("userbar").hidden = false;
+    $("who").textContent = "Signed in as " + me.display_name;
+    $("btn-users").hidden = !me.is_admin;
+  }
+  function closePanels() {
+    $("panel-pass").hidden = true;
+    $("panel-users").hidden = true;
+  }
+
+  function forceSignOut(message) {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    saveSession(null);
+    me = null; actions = []; team = [];
+    showLogin(message);
+  }
+  function signOut() {
+    var tok = session && session.access_token;
+    if (tok) {
+      fetch(SB_URL + "/auth/v1/logout", {
+        method: "POST", headers: { "apikey": SB_KEY, "Authorization": "Bearer " + tok, "Content-Type": "application/json" }
+      }).catch(function () {});
+    }
+    forceSignOut("");
+  }
+
+  $("login-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var u = $("l-user").value.trim().toLowerCase();
+    var pw = $("l-pass").value;
+    if (!u || !pw) return;
+    $("l-msg").textContent = "";
+    $("l-btn").disabled = true;
+    authCall("/token?grant_type=password", { email: u + EMAIL_DOMAIN, password: pw })
+      .then(function (r) {
+        if (r.status === 400 || r.status === 401) throw new Error("Wrong username or password.");
+        if (!r.ok) return errText(r).then(function (t) { throw new Error(t); });
+        return r.json();
+      })
+      .then(function (d) { saveSession(toSession(d)); return boot(); })
+      .catch(function (err) {
+        var m = err && err.message || "";
+        $("l-msg").textContent = /Wrong username/.test(m) ? m : "Can\u2019t sign in right now. Check your connection and try again.";
+      })
+      .then(function () { $("l-btn").disabled = false; });
+  });
+  $("btn-out").addEventListener("click", signOut);
+
+  /* ---------- Panels: change password, add user ---------- */
+  function togglePanel(id, focusId) {
+    var panel = $(id);
+    var willOpen = panel.hidden;
+    closePanels();
+    panel.hidden = !willOpen;
+    if (willOpen) $(focusId).focus();
+  }
+  $("btn-pass").addEventListener("click", function () {
+    $("p-msg").textContent = ""; $("p-msg").className = "msg";
+    togglePanel("panel-pass", "p-new");
+  });
+  $("btn-users").addEventListener("click", function () {
+    $("u-msg").textContent = ""; $("u-msg").className = "msg";
+    renderTeam();
+    togglePanel("panel-users", "u-name");
+  });
+
+  function say(id, kind, text) { var n = $(id); n.className = "msg " + kind; n.textContent = text; }
+
+  $("pass-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var a = $("p-new").value, b = $("p-new2").value;
+    if (a.length < 6) return say("p-msg", "err", "Use at least 6 characters.");
+    if (a !== b) return say("p-msg", "err", "The two passwords don\u2019t match.");
+    say("p-msg", "", "Saving\u2026");
+    authedFetch(SB_URL + "/auth/v1/user", { method: "PUT", body: JSON.stringify({ password: a }) })
+      .then(function (r) {
+        if (!r.ok) return errText(r).then(function (t) { throw new Error(t); });
+        $("p-new").value = ""; $("p-new2").value = "";
+        say("p-msg", "ok", "Password changed. Use it next time you sign in.");
+      })
+      .catch(function (err) { say("p-msg", "err", err.message || "Couldn\u2019t change the password."); });
+  });
+
+  $("user-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var uname = $("u-name").value.trim().toLowerCase();
+    var pw = $("u-pass").value;
+    say("u-msg", "", "Creating\u2026");
+    rpc("admin_create_user", {
+      p_username: uname, p_password: pw,
+      p_display_name: $("u-display").value.trim() || null,
+      p_is_admin: $("u-admin").checked
+    }).then(function () {
+      say("u-msg", "ok", "Added " + uname + ". Share the initial password with them and ask them to change it after signing in.");
+      $("u-name").value = ""; $("u-display").value = ""; $("u-pass").value = ""; $("u-admin").checked = false;
+      return loadTeam();
+    }).then(renderTeam).catch(function (err) {
+      say("u-msg", "err", err.message || "Couldn\u2019t add that user.");
+    });
+  });
+
+  function loadTeam() {
+    return authedFetch(SB_URL + "/rest/v1/profiles?select=username,display_name,is_admin&order=display_name.asc")
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) { team = rows; render(); });
+  }
+  function renderTeam() {
+    $("team").textContent = team.length
+      ? "Team: " + team.map(function (t) { return t.display_name + " (" + t.username + (t.is_admin ? ", admin" : "") + ")"; }).join(", ")
+      : "";
+  }
+
+  /* ---------- Data ---------- */
   function setStatus(kind, msg) {
     var box = $("status");
     box.className = "status" + (kind ? " " + kind : "");
@@ -296,9 +610,8 @@
   function timeNow() {
     return new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   }
-
   function refresh() {
-    if (busy) return Promise.resolve();
+    if (busy || !session) return Promise.resolve();
     return sb("?select=id,text,owner,due,done&order=due.asc")
       .then(function (rows) {
         actions = rows;
@@ -306,10 +619,9 @@
         render();
       })
       .catch(function () {
-        setStatus("err", "Can\u2019t reach Supabase. Showing the last data loaded.");
+        if (session) setStatus("err", "Can\u2019t reach Supabase. Showing the last data loaded.");
       });
   }
-
   function mutate(fn) {
     busy++;
     return fn().then(function () { busy--; }, function (e) { busy--; throw e; });
@@ -378,13 +690,20 @@
       return a.name.localeCompare(b.name);
     });
 
+    // Owner suggestions: team members first, then anyone already used as an owner
     var dl = $("owner-list");
     dl.textContent = "";
-    list.forEach(function (g) {
-      var o = document.createElement("option");
-      o.value = g.name;
-      dl.appendChild(o);
-    });
+    var seen = {};
+    team.map(function (t) { return t.display_name; })
+      .concat(list.map(function (g) { return g.name; }))
+      .forEach(function (n) {
+        var k = n.toLowerCase();
+        if (seen[k]) return;
+        seen[k] = 1;
+        var o = document.createElement("option");
+        o.value = n;
+        dl.appendChild(o);
+      });
 
     var host = $("owners");
     host.textContent = "";
@@ -454,7 +773,7 @@
     });
   }
 
-  /* ---------- Add ---------- */
+  /* ---------- Add action ---------- */
   function defaultDue() {
     var d = new Date(); d.setDate(d.getDate() + 7);
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -484,7 +803,7 @@
     }).catch(fail).then(function () { btn.disabled = false; });
   });
 
-  /* ---------- One-time import of this browser's old local data ---------- */
+  /* ---------- Import old local data (once) ---------- */
   function readOld() {
     try {
       var raw = localStorage.getItem(OLD_KEY);
@@ -495,35 +814,56 @@
   function offerImport() {
     var old = readOld();
     if (!old.length) { $("import-banner").hidden = true; return; }
-    $("import-text").textContent = "Found " + old.length + (old.length === 1 ? " action" : " actions") + " saved in this browser from before. Move " + (old.length === 1 ? "it" : "them") + " to Supabase so the whole team sees " + (old.length === 1 ? "it" : "them") + ".";
+    var one = old.length === 1;
+    $("import-text").textContent = "Found " + old.length + (one ? " action" : " actions") + " saved in this browser from before. Move " + (one ? "it" : "them") + " to Supabase so the whole team sees " + (one ? "it" : "them") + ".";
     $("import-banner").hidden = false;
   }
   $("import-btn").addEventListener("click", function () {
-    var old = readOld();
-    var rows = old.map(function (a) {
+    var rows = readOld().map(function (a) {
       return { text: String(a.text).slice(0, 200), owner: String(a.owner).slice(0, 40), due: a.due, done: !!a.done };
     });
     if (!rows.length) return;
     $("import-btn").disabled = true;
-    mutate(function () {
-      return sb("", { method: "POST", body: rows });
-    }).then(function () {
-      try { localStorage.removeItem(OLD_KEY); } catch (e) {}
-      $("import-banner").hidden = true;
-      return refresh();
-    }).catch(function () {
-      fail();
-    }).then(function () { $("import-btn").disabled = false; });
+    mutate(function () { return sb("", { method: "POST", body: rows }); })
+      .then(function () {
+        try { localStorage.removeItem(OLD_KEY); } catch (e) {}
+        $("import-banner").hidden = true;
+        return refresh();
+      })
+      .catch(fail)
+      .then(function () { $("import-btn").disabled = false; });
   });
 
-  /* ---------- Live updates ---------- */
-  $("retry").addEventListener("click", refresh);
-  setInterval(function () { if (!document.hidden) refresh(); }, POLL_MS);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) refresh(); });
+  /* ---------- Start up ---------- */
+  function boot() {
+    return authedFetch(SB_URL + "/rest/v1/profiles?select=username,display_name,is_admin&id=eq." + encodeURIComponent(session.user_id || ""))
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        if (!rows.length) {
+          forceSignOut("This account isn\u2019t part of the team. Ask an admin to add you.");
+          return;
+        }
+        me = rows[0];
+        showApp();
+        if (!$("f-owner").value) $("f-owner").value = me.display_name;
+        render();
+        offerImport();
+        loadTeam().then(refresh);
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(function () { if (!document.hidden) refresh(); }, POLL_MS);
+      });
+  }
 
-  render();
-  offerImport();
-  refresh();
+  $("retry").addEventListener("click", refresh);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && session) refresh(); });
+
+  session = loadSession();
+  if (session) {
+    if (!session.user_id) session.user_id = jwtSub(session.access_token);
+    boot().catch(function () { showLogin(""); });
+  } else {
+    showLogin("");
+  }
 })();
 </script>
 </body>
