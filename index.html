@@ -141,8 +141,8 @@
   ul { list-style: none; margin: 0; padding: 0; }
   .item {
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 14px;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 6px 14px;
     align-items: start;
     padding: 14px;
     border-radius: 12px;
@@ -237,6 +237,29 @@
   .team { margin:14px 0 0; color:var(--ink-soft); font-size:0.98rem; }
   input[type="password"] { width:100%; font:inherit; font-size:1.05rem; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:13px 14px; min-height:52px; }
   input[type="password"]:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+
+  .bell { background:none; border:0; color:var(--ink-soft); width:40px; height:40px; border-radius:10px; cursor:pointer; display:grid; place-content:center; }
+  .bell:hover { background:var(--surface-2); color:var(--accent); }
+  .bell svg { width:22px; height:22px; }
+  .phone { background:var(--surface-2); border-radius:14px; padding:18px; margin-bottom:22px; }
+  .phone h3, .remlist-h { font-size:1.1rem; font-weight:700; margin:0 0 8px; }
+  .phone ol { margin:0 0 14px; padding-left:22px; }
+  .phone li { margin-bottom:6px; }
+  .topic { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .topic code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:0.95rem; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; overflow-wrap:anywhere; flex:1 1 260px; user-select:all; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .quick { display:flex; gap:8px; flex-wrap:wrap; }
+  select { width:100%; font:inherit; font-size:1.05rem; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:13px 14px; min-height:52px; }
+  select:focus-visible, input[type="datetime-local"]:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  input[type="datetime-local"] { width:100%; font:inherit; font-size:1.05rem; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:13px 14px; min-height:52px; }
+  .remlist { margin-top:22px; }
+  .rem { display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; padding:12px 14px; border-radius:12px; background:var(--bg); border:1px solid var(--line); }
+  .rem + .rem { margin-top:8px; }
+  .rem .t { font-size:1.1rem; font-weight:500; overflow-wrap:anywhere; }
+  .rem .w { color:var(--ink-soft); font-size:0.95rem; }
+  .rem.sent .t { color:var(--ink-soft); }
+  .rem .w b { color:var(--accent); font-weight:700; }
+  .linkbtn { font:inherit; font-size:0.95rem; color:var(--ink-soft); background:none; border:0; border-bottom:1px solid var(--line); padding:0; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -248,6 +271,7 @@
     </div>
     <div class="userbar" id="userbar" hidden>
       <span class="who" id="who"></span>
+      <button class="chip" id="btn-rem" type="button">Reminders</button>
       <button class="chip" id="btn-users" type="button" hidden>Add user</button>
       <button class="chip" id="btn-pass" type="button">Change password</button>
       <button class="chip strong" id="btn-out" type="button">Sign out</button>
@@ -271,6 +295,55 @@
   </section>
 
   <div id="app" hidden>
+    <section class="card panel" id="panel-rem" hidden aria-labelledby="rem-h">
+      <h2 id="rem-h">Reminders</h2>
+      <div class="phone">
+        <h3>Get alerts on your phone</h3>
+        <ol>
+          <li>Install the free <strong>ntfy</strong> app from the App Store or Google Play.</li>
+          <li>Open it, tap <strong>+</strong>, and subscribe to your private topic below (keep the default server, ntfy.sh).</li>
+          <li>Tap <strong>Send test alert</strong> to check it works.</li>
+        </ol>
+        <div class="topic">
+          <code id="topic">Loading your topic…</code>
+          <button class="chip" id="btn-copy" type="button">Copy</button>
+        </div>
+        <div class="row">
+          <button class="chip strong" id="btn-test" type="button">Send test alert</button>
+          <button class="linkbtn" id="btn-rotate" type="button">Get a new topic</button>
+        </div>
+        <p class="msg" id="phone-msg" role="status"></p>
+      </div>
+
+      <form id="rem-form" class="stack" autocomplete="off">
+        <div>
+          <label for="r-msg">Remind me to</label>
+          <input type="text" id="r-msg" placeholder="Send the revised budget to finance" maxlength="200" required>
+        </div>
+        <div class="grid2">
+          <div>
+            <label for="r-when">When</label>
+            <input type="datetime-local" id="r-when" required>
+          </div>
+          <div>
+            <label for="r-action">About action (optional)</label>
+            <select id="r-action"><option value="">No specific action</option></select>
+          </div>
+        </div>
+        <div class="quick">
+          <button class="chip" type="button" data-quick="hour">In 1 hour</button>
+          <button class="chip" type="button" data-quick="tomorrow">Tomorrow 9:00</button>
+        </div>
+        <p class="msg" id="r-note" role="status"></p>
+        <button class="btn" type="submit">Add reminder</button>
+      </form>
+
+      <div class="remlist">
+        <h3 class="remlist-h">Your reminders</h3>
+        <ul id="rem-list"></ul>
+      </div>
+    </section>
+
     <section class="card panel" id="panel-pass" hidden aria-labelledby="pass-h">
       <h2 id="pass-h">Change your password</h2>
       <form id="pass-form" class="stack" autocomplete="off">
@@ -372,6 +445,8 @@
   var busy = 0;
   var pollTimer = null;
   var refreshing = null;
+  var reminders = [];
+  var myTopic = null;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -473,7 +548,7 @@
     return authedFetch(SB_URL + "/rest/v1/rpc/" + name, { method: "POST", body: JSON.stringify(args) })
       .then(function (r) {
         if (!r.ok) return errText(r).then(function (t) { throw new Error(t); });
-        return r.json();
+        return r.text().then(function (t) { return t ? JSON.parse(t) : null; });
       });
   }
 
@@ -494,6 +569,7 @@
     $("btn-users").hidden = !me.is_admin;
   }
   function closePanels() {
+    $("panel-rem").hidden = true;
     $("panel-pass").hidden = true;
     $("panel-users").hidden = true;
   }
@@ -501,7 +577,7 @@
   function forceSignOut(message) {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     saveSession(null);
-    me = null; actions = []; team = [];
+    me = null; actions = []; team = []; reminders = []; myTopic = null;
     showLogin(message);
   }
   function signOut() {
@@ -617,6 +693,7 @@
         actions = rows;
         setStatus("live", "Live from Supabase, updated " + timeNow());
         render();
+        loadReminders();
       })
       .catch(function () {
         if (session) setStatus("err", "Can\u2019t reach Supabase. Showing the last data loaded.");
@@ -765,7 +842,14 @@
           }).catch(function () { actions = before; render(); fail(); });
         });
 
-        li.appendChild(cb); li.appendChild(body); li.appendChild(del);
+        var bell = el("button", "bell");
+        bell.type = "button";
+        bell.title = "Remind me";
+        bell.setAttribute("aria-label", "Set a reminder for: " + a.text);
+        bell.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+        bell.addEventListener("click", function () { remindAbout(a); });
+
+        li.appendChild(cb); li.appendChild(body); li.appendChild(bell); li.appendChild(del);
         ul.appendChild(li);
       });
       card.appendChild(ul);
@@ -832,6 +916,184 @@
       })
       .catch(fail)
       .then(function () { $("import-btn").disabled = false; });
+  });
+
+  /* ---------- Reminders ---------- */
+  function toLocalInput(d) {
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function niceWhen(iso) {
+    return new Date(iso).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  }
+  function inOneHour() { var d = new Date(); d.setHours(d.getHours() + 1); d.setSeconds(0, 0); return d; }
+  function tomorrowNine() { var d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; }
+
+  function loadMyTopic() {
+    if (myTopic) return Promise.resolve(myTopic);
+    return rpc("get_my_alert_topic", {}).then(function (t) {
+      myTopic = t;
+      $("topic").textContent = t;
+      return t;
+    });
+  }
+
+  function loadReminders() {
+    if (!session) return Promise.resolve();
+    return authedFetch(SB_URL + "/rest/v1/reminders?select=id,message,remind_at,sent_at,action_id&order=remind_at.asc")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rows) { if (rows) { reminders = rows; renderReminders(); } })
+      .catch(function () {});
+  }
+
+  function fillActionOptions(selected) {
+    var sel = $("r-action");
+    sel.textContent = "";
+    var none = document.createElement("option");
+    none.value = ""; none.textContent = "No specific action";
+    sel.appendChild(none);
+    actions.filter(function (a) { return !a.done; })
+      .sort(function (a, b) { return a.due < b.due ? -1 : 1; })
+      .forEach(function (a) {
+        var o = document.createElement("option");
+        o.value = a.id;
+        o.textContent = a.owner + ": " + (a.text.length > 50 ? a.text.slice(0, 50) + "\u2026" : a.text);
+        sel.appendChild(o);
+      });
+    sel.value = selected || "";
+  }
+
+  function renderReminders() {
+    var ul = $("rem-list");
+    ul.textContent = "";
+    var pending = reminders.filter(function (r) { return !r.sent_at; });
+    var sent = reminders.filter(function (r) { return r.sent_at; })
+      .sort(function (a, b) { return a.remind_at < b.remind_at ? 1 : -1; }).slice(0, 8);
+    var all = pending.concat(sent);
+    if (!all.length) {
+      var li = el("li", "w", "No reminders yet. Add one above, or tap the bell on any action.");
+      li.style.color = "var(--ink-soft)";
+      ul.appendChild(li);
+      return;
+    }
+    all.forEach(function (r) {
+      var li = el("li", "rem" + (r.sent_at ? " sent" : ""));
+      li.appendChild(el("div", "t", r.message));
+      var del = el("button", "del", "\u00d7");
+      del.type = "button";
+      del.title = "Delete reminder";
+      del.setAttribute("aria-label", "Delete reminder: " + r.message);
+      del.addEventListener("click", function () {
+        var before = reminders.slice();
+        reminders = reminders.filter(function (x) { return x.id !== r.id; });
+        renderReminders();
+        authedFetch(SB_URL + "/rest/v1/reminders?id=eq." + encodeURIComponent(r.id), { method: "DELETE" })
+          .then(function (res) { if (!res.ok) throw new Error("fail"); })
+          .catch(function () { reminders = before; renderReminders(); });
+      });
+      li.appendChild(del);
+      var w = el("div", "w");
+      w.style.gridColumn = "1 / -1";
+      if (r.sent_at) {
+        w.textContent = "Sent to your phone for " + niceWhen(r.remind_at);
+      } else if (new Date(r.remind_at) <= new Date()) {
+        w.textContent = "Sending now\u2026";
+      } else {
+        var b = el("b", null, "Scheduled");
+        w.appendChild(b);
+        w.appendChild(document.createTextNode(" for " + niceWhen(r.remind_at)));
+      }
+      li.appendChild(w);
+      ul.appendChild(li);
+    });
+  }
+
+  function openReminders(prefill) {
+    closePanelsExcept("panel-rem");
+    var panel = $("panel-rem");
+    panel.hidden = false;
+    fillActionOptions(prefill && prefill.action_id);
+    $("r-msg").value = prefill ? prefill.message : "";
+    $("r-when").min = toLocalInput(new Date());
+    $("r-when").value = prefill ? toLocalInput(prefill.when) : toLocalInput(tomorrowNine());
+    $("r-note").textContent = ""; $("r-note").className = "msg";
+    renderReminders();
+    loadMyTopic().catch(function () { $("topic").textContent = "Couldn\u2019t load your topic. Try again."; });
+    loadReminders();
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("r-msg").focus({ preventScroll: true });
+  }
+  function closePanelsExcept(id) {
+    ["panel-rem", "panel-pass", "panel-users"].forEach(function (p) { if (p !== id) $(p).hidden = true; });
+  }
+  function remindAbout(a) {
+    var when = new Date(a.due + "T09:00:00");
+    if (when <= new Date()) when = inOneHour();
+    openReminders({ action_id: a.id, message: "Action: " + a.text, when: when });
+  }
+
+  $("btn-rem").addEventListener("click", function () {
+    if (!$("panel-rem").hidden) { $("panel-rem").hidden = true; return; }
+    openReminders(null);
+  });
+
+  document.querySelectorAll("[data-quick]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      $("r-when").value = toLocalInput(b.getAttribute("data-quick") === "hour" ? inOneHour() : tomorrowNine());
+    });
+  });
+  $("r-action").addEventListener("change", function () {
+    var id = this.value;
+    var a = actions.filter(function (x) { return x.id === id; })[0];
+    if (a && !$("r-msg").value.trim()) $("r-msg").value = "Action: " + a.text;
+  });
+
+  $("rem-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var msg = $("r-msg").value.trim();
+    var when = new Date($("r-when").value);
+    if (!msg || isNaN(when)) return;
+    if (when <= new Date()) return say("r-note", "err", "Pick a time in the future.");
+    var btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true;
+    say("r-note", "", "Saving\u2026");
+    authedFetch(SB_URL + "/rest/v1/reminders", {
+      method: "POST", headers: { "Prefer": "return=representation" },
+      body: JSON.stringify({ message: msg, remind_at: when.toISOString(), action_id: $("r-action").value || null })
+    }).then(function (r) {
+      if (!r.ok) return errText(r).then(function (t) { throw new Error(t); });
+      return r.json();
+    }).then(function (rows) {
+      reminders.push(rows[0]);
+      renderReminders();
+      $("r-msg").value = ""; $("r-action").value = "";
+      say("r-note", "ok", "Reminder set for " + niceWhen(rows[0].remind_at) + ". It will ring on your phone.");
+    }).catch(function () {
+      say("r-note", "err", "Couldn\u2019t save the reminder. Check your connection and try again.");
+    }).then(function () { btn.disabled = false; });
+  });
+
+  $("btn-copy").addEventListener("click", function () {
+    var t = $("topic").textContent;
+    if (!myTopic) return;
+    var done = function () { say("phone-msg", "ok", "Topic copied."); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(done, function () { say("phone-msg", "err", "Couldn\u2019t copy. Select the topic and copy it by hand."); });
+    } else {
+      say("phone-msg", "err", "Couldn\u2019t copy. Select the topic and copy it by hand.");
+    }
+  });
+  $("btn-test").addEventListener("click", function () {
+    say("phone-msg", "", "Sending test alert\u2026");
+    loadMyTopic().then(function () { return rpc("send_my_test_alert", {}); })
+      .then(function () { say("phone-msg", "ok", "Test alert sent. It should reach your phone within a few seconds. If not, check you subscribed to the topic above."); })
+      .catch(function () { say("phone-msg", "err", "Couldn\u2019t send the test alert. Try again."); });
+  });
+  $("btn-rotate").addEventListener("click", function () {
+    if (!window.confirm("Get a new topic? Your phone will stop receiving alerts until you subscribe to the new one.")) return;
+    rpc("rotate_my_alert_topic", {}).then(function (t) {
+      myTopic = t; $("topic").textContent = t;
+      say("phone-msg", "ok", "New topic created. Subscribe to it in the ntfy app and remove the old one.");
+    }).catch(function () { say("phone-msg", "err", "Couldn\u2019t create a new topic. Try again."); });
   });
 
   /* ---------- Start up ---------- */
