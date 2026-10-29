@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meeting actions (live)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #e9ecea;
+    --surface: #f6f7f6;
+    --surface-2: #eceeed;
+    --ink: #232826;
+    --ink-soft: #5d6662;
+    --line: #d3d8d5;
+    --accent: #e8650a;
+    --accent-ink: #ffffff;
+    --red: #c0281f;
+    --red-bg: #fbe9e7;
+    --shadow: 0 1px 2px rgba(35, 40, 38, 0.06), 0 6px 18px rgba(35, 40, 38, 0.05);
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #181c1a;
+      --surface: #222725;
+      --surface-2: #2b312e;
+      --ink: #eceeed;
+      --ink-soft: #a2aca7;
+      --line: #363d39;
+      --accent: #f07a1f;
+      --accent-ink: #1a1a18;
+      --red: #ff8a80;
+      --red-bg: #3a2523;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #181c1a;
+    --surface: #222725;
+    --surface-2: #2b312e;
+    --ink: #eceeed;
+    --ink-soft: #a2aca7;
+    --line: #363d39;
+    --accent: #f07a1f;
+    --accent-ink: #1a1a18;
+    --red: #ff8a80;
+    --red-bg: #3a2523;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.25);
+    color-scheme: dark;
+  }
+
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 18px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 20px 72px; }
+
+  h1 { font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); margin: 0 0 28px; font-size: 1.05rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  /* Summary */
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+  .stat { padding: 18px 20px; }
+  .stat .num { font-size: 2.6rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+  .stat .lbl { color: var(--ink-soft); font-size: 1rem; margin-top: 6px; }
+  .stat.open .num { color: var(--accent); }
+  .stat.late.has .num, .stat.late.has .lbl { color: var(--red); }
+  .stat.late.has { background: var(--red-bg); border-color: transparent; }
+  .progress { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-bottom: 28px; }
+  .progress > div { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width 0.3s ease; }
+
+  /* Add form */
+  .add { padding: 22px; margin-bottom: 32px; }
+  .add h2 { font-size: 1.2rem; margin: 0 0 14px; font-weight: 600; }
+  .fields { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 720px) {
+    .fields { grid-template-columns: 2.2fr 1fr 1fr auto; align-items: end; }
+  }
+  label { display: block; font-size: 0.95rem; color: var(--ink-soft); font-weight: 500; margin-bottom: 6px; }
+  input[type="text"], input[type="date"] {
+    width: 100%;
+    font: inherit;
+    font-size: 1.05rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 14px;
+    min-height: 52px;
+  }
+  input::placeholder { color: var(--ink-soft); opacity: 0.8; }
+  input:focus-visible, button:focus-visible, .check:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .btn {
+    font: inherit;
+    font-weight: 700;
+    font-size: 1.05rem;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: 0;
+    border-radius: 12px;
+    padding: 0 26px;
+    min-height: 52px;
+    cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:active { transform: translateY(1px); }
+
+  /* Owner cards */
+  .owners { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
+  @media (min-width: 820px) { .owners { grid-template-columns: 1fr 1fr; } }
+  .owner { padding: 8px 8px 10px; }
+  .owner-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 14px 10px; }
+  .owner-head h3 { margin: 0; font-size: 1.35rem; font-weight: 700; overflow-wrap: anywhere; }
+  .owner-head .meta { color: var(--ink-soft); font-size: 0.95rem; white-space: nowrap; }
+  .owner-head .meta .late { color: var(--red); font-weight: 700; }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+  .item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: start;
+    padding: 14px;
+    border-radius: 12px;
+    border-left: 4px solid transparent;
+  }
+  .item + .item { margin-top: 4px; }
+  .item.overdue { background: var(--red-bg); border-left-color: var(--red); }
+  .item .text { font-size: 1.15rem; font-weight: 500; overflow-wrap: anywhere; }
+  .item .due { font-size: 0.95rem; color: var(--ink-soft); margin-top: 2px; }
+  .item.overdue .due { color: var(--red); font-weight: 700; }
+  .item.done .text { text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
+  .item.done .due { opacity: 0.8; }
+
+  .check {
+    appearance: none; -webkit-appearance: none;
+    width: 30px; height: 30px; margin: 1px 0 0;
+    border: 2px solid var(--ink-soft);
+    border-radius: 9px;
+    background: transparent;
+    cursor: pointer;
+    display: grid; place-content: center;
+    flex: none;
+  }
+  .check:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .check:checked::after {
+    content: "";
+    width: 14px; height: 8px;
+    border-left: 3px solid var(--accent-ink);
+    border-bottom: 3px solid var(--accent-ink);
+    transform: translateY(-2px) rotate(-45deg);
+  }
+  .item.overdue .check:not(:checked) { border-color: var(--red); }
+
+  .del {
+    background: none; border: 0; color: var(--ink-soft);
+    font: inherit; font-size: 1.5rem; line-height: 1;
+    width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
+  }
+  .del:hover { background: var(--surface-2); color: var(--ink); }
+
+  .empty {
+    text-align: center; padding: 48px 20px; color: var(--ink-soft);
+  }
+  .empty strong { display: block; color: var(--ink); font-size: 1.25rem; margin-bottom: 4px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 17px; }
+    .wrap { padding-top: 28px; }
+    h1 { font-size: 1.8rem; }
+    .stat { padding: 14px; }
+    .stat .num { font-size: 2.1rem; }
+    .summary { gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress > div { transition: none; }
+  }
+
+  .status { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:-12px 0 24px; font-size:0.95rem; color:var(--ink-soft); }
+  .dot { width:10px; height:10px; border-radius:50%; background:var(--ink-soft); flex:none; }
+  .status.live .dot { background:var(--accent); }
+  .status.err { color:var(--red); font-weight:600; }
+  .status.err .dot { background:var(--red); }
+  .link { font:inherit; font-weight:600; color:var(--ink); background:none; border:0; border-bottom:2px solid var(--accent); padding:0; cursor:pointer; }
+  .banner { padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .banner .btn { min-height:44px; }
+  .banner[hidden] { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Meeting actions</h1>
+  <p class="sub">Write down who does what, and by when. Nothing gets forgotten.</p>
+
+  <div class="status" id="status" role="status"><span class="dot"></span><span id="status-text">Connecting…</span><button class="link" id="retry" type="button" hidden>Try again</button></div>
+  <div class="card banner" id="import-banner" hidden>
+    <span id="import-text"></span>
+    <button class="btn" id="import-btn" type="button">Import to Supabase</button>
+  </div>
+
+  <section class="summary" aria-label="Summary">
+    <div class="card stat open"><div class="num" id="n-open">0</div><div class="lbl">Open</div></div>
+    <div class="card stat done"><div class="num" id="n-done">0</div><div class="lbl">Done</div></div>
+    <div class="card stat late" id="stat-late"><div class="num" id="n-late">0</div><div class="lbl">Overdue</div></div>
+  </section>
+  <div class="progress" role="progressbar" aria-label="Share of actions done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div id="bar-fill"></div></div>
+
+  <section class="card add">
+    <h2>Add an action</h2>
+    <form id="form" autocomplete="off">
+      <div class="fields">
+        <div>
+          <label for="f-text">What needs to happen?</label>
+          <input type="text" id="f-text" placeholder="Send the revised budget to finance" required maxlength="200">
+        </div>
+        <div>
+          <label for="f-owner">Owner</label>
+          <input type="text" id="f-owner" list="owner-list" placeholder="Name" required maxlength="40">
+          <datalist id="owner-list"></datalist>
+        </div>
+        <div>
+          <label for="f-due">Due date</label>
+          <input type="date" id="f-due" required>
+        </div>
+        <button class="btn" type="submit">Add action</button>
+      </div>
+    </form>
+  </section>
+
+  <main id="owners" class="owners" aria-live="polite"></main>
+</div>
+
+<script>
+(function () {
+  var SB_URL = "https://nuystrzzcexbwotrrxxa.supabase.co";
+  var SB_KEY = "sb_publishable__DSToJzARzJY6ALkxWIb6w_TCIbt40v";
+  var TABLE = SB_URL + "/rest/v1/meeting_actions";
+  var OLD_KEY = "meeting-actions-v1";
+  var POLL_MS = 15000;
+
+  var actions = [];
+  var busy = 0;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- Supabase REST ---------- */
+  function sb(query, opts) {
+    opts = opts || {};
+    var headers = { "apikey": SB_KEY, "Content-Type": "application/json" };
+    if (opts.returning) headers["Prefer"] = "return=representation";
+    return fetch(TABLE + (query || ""), {
+      method: opts.method || "GET",
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) { throw new Error("HTTP " + r.status + " " + t); });
+      }
+      return r.status === 204 ? null : r.json();
+    });
+  }
+
+  function setStatus(kind, msg) {
+    var box = $("status");
+    box.className = "status" + (kind ? " " + kind : "");
+    $("status-text").textContent = msg;
+    $("retry").hidden = kind !== "err";
+  }
+  function timeNow() {
+    return new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+
+  function refresh() {
+    if (busy) return Promise.resolve();
+    return sb("?select=id,text,owner,due,done&order=due.asc")
+      .then(function (rows) {
+        actions = rows;
+        setStatus("live", "Live from Supabase, updated " + timeNow());
+        render();
+      })
+      .catch(function () {
+        setStatus("err", "Can\u2019t reach Supabase. Showing the last data loaded.");
+      });
+  }
+
+  function mutate(fn) {
+    busy++;
+    return fn().then(function () { busy--; }, function (e) { busy--; throw e; });
+  }
+  function fail() {
+    setStatus("err", "That change didn\u2019t save. Check your connection and try again.");
+  }
+
+  /* ---------- Dates ---------- */
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function parseDate(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function daysBetween(a, b) { return Math.round((parseDate(b) - parseDate(a)) / 86400000); }
+  function isOverdue(a) { return !a.done && a.due < todayStr(); }
+  function dueLabel(a) {
+    var diff = daysBetween(todayStr(), a.due);
+    var nice = parseDate(a.due).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+    if (a.done) return "Was due " + nice;
+    if (diff < 0) return "Overdue by " + (-diff) + (diff === -1 ? " day" : " days") + ", due " + nice;
+    if (diff === 0) return "Due today";
+    if (diff === 1) return "Due tomorrow";
+    return "Due " + nice;
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  /* ---------- Render ---------- */
+  function render() {
+    var open = actions.filter(function (a) { return !a.done; }).length;
+    var done = actions.length - open;
+    var late = actions.filter(isOverdue).length;
+
+    $("n-open").textContent = open;
+    $("n-done").textContent = done;
+    $("n-late").textContent = late;
+    $("stat-late").classList.toggle("has", late > 0);
+    var pct = actions.length ? Math.round((done / actions.length) * 100) : 0;
+    $("bar-fill").style.width = pct + "%";
+    $("bar").setAttribute("aria-valuenow", pct);
+
+    var groups = {};
+    actions.forEach(function (a) {
+      var k = a.owner.trim().toLowerCase();
+      if (!groups[k]) groups[k] = { name: a.owner.trim(), items: [] };
+      groups[k].items.push(a);
+    });
+    var list = Object.keys(groups).map(function (k) { return groups[k]; });
+    list.forEach(function (g) {
+      g.items.sort(function (a, b) {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        return a.due < b.due ? -1 : a.due > b.due ? 1 : 0;
+      });
+      g.open = g.items.filter(function (a) { return !a.done; }).length;
+      g.late = g.items.filter(isOverdue).length;
+    });
+    list.sort(function (a, b) {
+      if ((a.open > 0) !== (b.open > 0)) return a.open > 0 ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    var dl = $("owner-list");
+    dl.textContent = "";
+    list.forEach(function (g) {
+      var o = document.createElement("option");
+      o.value = g.name;
+      dl.appendChild(o);
+    });
+
+    var host = $("owners");
+    host.textContent = "";
+
+    if (!list.length) {
+      var empty = el("div", "card empty");
+      empty.appendChild(el("strong", null, "No actions yet"));
+      empty.appendChild(el("span", null, "Add the first action from your meeting above."));
+      empty.style.gridColumn = "1 / -1";
+      host.appendChild(empty);
+      return;
+    }
+
+    list.forEach(function (g) {
+      var card = el("section", "card owner");
+      var head = el("div", "owner-head");
+      head.appendChild(el("h3", null, g.name));
+      var meta = el("span", "meta");
+      meta.appendChild(document.createTextNode(g.open + " open, " + (g.items.length - g.open) + " done"));
+      if (g.late) {
+        meta.appendChild(document.createTextNode(", "));
+        meta.appendChild(el("span", "late", g.late + " overdue"));
+      }
+      head.appendChild(meta);
+      card.appendChild(head);
+
+      var ul = el("ul");
+      g.items.forEach(function (a) {
+        var od = isOverdue(a);
+        var li = el("li", "item" + (a.done ? " done" : "") + (od ? " overdue" : ""));
+
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "check";
+        cb.checked = !!a.done;
+        cb.setAttribute("aria-label", "Mark done: " + a.text);
+        cb.addEventListener("change", function () {
+          var next = cb.checked, prev = a.done;
+          a.done = next; render();
+          mutate(function () {
+            return sb("?id=eq." + encodeURIComponent(a.id), { method: "PATCH", body: { done: next } });
+          }).catch(function () { a.done = prev; render(); fail(); });
+        });
+
+        var body = el("div");
+        body.appendChild(el("div", "text", a.text));
+        body.appendChild(el("div", "due", dueLabel(a)));
+
+        var del = el("button", "del", "\u00d7");
+        del.type = "button";
+        del.setAttribute("aria-label", "Delete action: " + a.text);
+        del.title = "Delete";
+        del.addEventListener("click", function () {
+          var before = actions.slice();
+          actions = actions.filter(function (x) { return x.id !== a.id; });
+          render();
+          mutate(function () {
+            return sb("?id=eq." + encodeURIComponent(a.id), { method: "DELETE" });
+          }).catch(function () { actions = before; render(); fail(); });
+        });
+
+        li.appendChild(cb); li.appendChild(body); li.appendChild(del);
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+      host.appendChild(card);
+    });
+  }
+
+  /* ---------- Add ---------- */
+  function defaultDue() {
+    var d = new Date(); d.setDate(d.getDate() + 7);
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  $("f-due").value = defaultDue();
+
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = $("f-text").value.trim();
+    var owner = $("f-owner").value.trim();
+    var due = $("f-due").value;
+    if (!text || !owner || !due) return;
+
+    var known = actions.filter(function (a) { return a.owner.trim().toLowerCase() === owner.toLowerCase(); })[0];
+    if (known) owner = known.owner.trim();
+
+    var btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true;
+    mutate(function () {
+      return sb("", { method: "POST", returning: true, body: { text: text, owner: owner, due: due } })
+        .then(function (rows) {
+          actions.push(rows[0]);
+          $("f-text").value = "";
+          $("f-text").focus();
+          render();
+        });
+    }).catch(fail).then(function () { btn.disabled = false; });
+  });
+
+  /* ---------- One-time import of this browser's old local data ---------- */
+  function readOld() {
+    try {
+      var raw = localStorage.getItem(OLD_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(function (a) { return a && a.text && a.owner && a.due; }) : [];
+    } catch (e) { return []; }
+  }
+  function offerImport() {
+    var old = readOld();
+    if (!old.length) { $("import-banner").hidden = true; return; }
+    $("import-text").textContent = "Found " + old.length + (old.length === 1 ? " action" : " actions") + " saved in this browser from before. Move " + (old.length === 1 ? "it" : "them") + " to Supabase so the whole team sees " + (old.length === 1 ? "it" : "them") + ".";
+    $("import-banner").hidden = false;
+  }
+  $("import-btn").addEventListener("click", function () {
+    var old = readOld();
+    var rows = old.map(function (a) {
+      return { text: String(a.text).slice(0, 200), owner: String(a.owner).slice(0, 40), due: a.due, done: !!a.done };
+    });
+    if (!rows.length) return;
+    $("import-btn").disabled = true;
+    mutate(function () {
+      return sb("", { method: "POST", body: rows });
+    }).then(function () {
+      try { localStorage.removeItem(OLD_KEY); } catch (e) {}
+      $("import-banner").hidden = true;
+      return refresh();
+    }).catch(function () {
+      fail();
+    }).then(function () { $("import-btn").disabled = false; });
+  });
+
+  /* ---------- Live updates ---------- */
+  $("retry").addEventListener("click", refresh);
+  setInterval(function () { if (!document.hidden) refresh(); }, POLL_MS);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) refresh(); });
+
+  render();
+  offerImport();
+  refresh();
+})();
+</script>
+</body>
+</html>
